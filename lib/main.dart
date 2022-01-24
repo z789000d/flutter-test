@@ -1,18 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:untitledtest1/TwoPage.dart';
 import 'package:untitledtest1/models/ApiPost.dart';
 import 'dart:convert';
+import 'models/Utillity.dart';
+
+ApiPost apiPost = ApiPost();
+String exchangeRateJPY = "";
+GlobalKey<ScaffoldState> globalKey = GlobalKey();
+Utillity utillity = Utillity();
 
 void main() {
-  runApp(MaterialApp(
-    home: HomePage(),
-  ));
+  apiPost.post().then((value) {
+    exchangeRateJPY = jsonDecode(value.toString())['exchange_rate_JPY'];
+
+    runApp(MaterialApp(
+      builder: (context, child) => Scaffold(
+        // Global GestureDetector that will dismiss the keyboard
+        body: GestureDetector(
+          onTap: () {
+            utillity.hideKeyboard(context);
+          },
+          child: child,
+        ),
+      ),
+      home: HomePage(),
+    ));
+  });
 }
 
 class HomePage extends StatefulWidget {
   HomePage({Key? key}) : super(key: key);
 
   @override
-  HomePageState createState() => HomePageState();
+  HomePageState createState() {
+    return HomePageState();
+  }
 }
 
 class HomePageState extends State<HomePage> {
@@ -28,6 +50,7 @@ class HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: PreferredSize(
           preferredSize: Size.fromHeight(60), child: buildAppBar()),
+      drawer: DrawerWidget(),
       body: ListView(
         scrollDirection: Axis.vertical,
         shrinkWrap: true,
@@ -50,7 +73,8 @@ class HomePageState extends State<HomePage> {
             height: 5.0,
           ),
           createdProductView(),
-          createRefreshButton()
+          createRefreshButton(),
+          createIntentButton()
         ],
       ),
     );
@@ -135,18 +159,19 @@ class HomePageState extends State<HomePage> {
 
   Widget createRefreshButton() {
     return TextButton(
-        child: Text("按鈕"),
+        child: Text(exchangeRateJPY),
         onPressed: () async {
           _valueListenable.value.add("5");
           print("aaaa $_valueListenable.value");
-
-          ApiPost apiPost = ApiPost();
-
-          await apiPost
-              .post()
-              .then((value) => print("aaaaaa " + jsonDecode(value.toString())['exchange_rate_JPY']));
-
           setState(() {});
+        });
+  }
+
+  Widget createIntentButton() {
+    return TextButton(
+        child: Text('切換頁面'),
+        onPressed: () async {
+         Navigator.push(context, MaterialPageRoute(builder: (context) => TwoPage()));
         });
   }
 
@@ -180,7 +205,6 @@ class HomePageState extends State<HomePage> {
   Widget buildAppBar() {
     return AppBar(
       backgroundColor: Colors.blue,
-      leading: Icon(Icons.menu),
       title: Align(
         child: Text(
           "test1",
@@ -191,6 +215,57 @@ class HomePageState extends State<HomePage> {
         Icon(Icons.notifications_none),
         Icon(Icons.card_travel)
       ],
+    );
+  }
+}
+
+class DrawerWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          UserAccountsDrawerHeader(
+            accountName: Text(
+              'RedKeyset',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            accountEmail: Text('redkeyset@gmail.com'),
+            //定义用户头像，CircleAvatar 指定成圆形
+            currentAccountPicture: CircleAvatar(
+              backgroundImage: NetworkImage(
+                  'http://pic.616pic.com/ys_bnew_img/00/05/27/1oJwLdJItV.jpg'),
+            ),
+            decoration: BoxDecoration(
+                color: Colors.deepOrangeAccent, //区域背景颜色
+                image: DecorationImage(
+                    image: NetworkImage(
+                        'https://media.istockphoto.com/photos/deep-space-picture-id472809828?k=20&m=472809828&s=612x612&w=0&h=BGwhzzdXPHUeEm0iu20x241YLSb3tEsPRrH35uygMYg='),
+                    fit: BoxFit.cover,
+                    // ColorFilter 颜色滤镜  BlendMode混合模式
+                    colorFilter: ColorFilter.mode(
+                        Colors.blue[300]!
+                            .withOpacity(0.2), // blueAccent 这一类的颜色会报错
+                        BlendMode.srcOver))),
+          ),
+          ListTile(
+              leading: Icon(Icons.access_alarm,
+                  color: Colors.blueAccent, size: 18.0), //指定Icon的颜色  和 大小
+              title:
+                  Text('新闻', textAlign: TextAlign.left), //TextAlign.left 文字左对齐
+              onTap: () => Navigator.pop(context)),
+          ListTile(
+              title: Text('消息', textAlign: TextAlign.center),
+              onTap: () => Navigator.pop(context)),
+          ListTile(
+              title: Text('关于我们',
+                  textAlign: TextAlign.right), //TextAlign.right 文字右对齐
+              trailing: Icon(Icons.account_balance,
+                  color: Colors.orangeAccent, size: 28.0),
+              onTap: () => Navigator.pop(context))
+        ],
+      ),
     );
   }
 }
