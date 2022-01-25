@@ -15,7 +15,7 @@ class ApiPost {
   Future<Response> post() async {
 
     var url = 'https://www.funbid.com.hk/app/index.php';
-    var body = {'tokon': '24/01/2022', 'id': '', 'domain': 'yahoojp'};
+    var body = {'tokon': getTokon(), 'id': '', 'domain': 'yahoojp'};
 
     FormData formData = FormData.fromMap(body);
 

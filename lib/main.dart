@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:untitledtest1/DrawerWidget.dart';
 import 'package:untitledtest1/TwoPage.dart';
 import 'package:untitledtest1/models/ApiPost.dart';
 import 'dart:convert';
@@ -8,6 +12,8 @@ ApiPost apiPost = ApiPost();
 String exchangeRateJPY = "";
 GlobalKey<ScaffoldState> globalKey = GlobalKey();
 Utillity utillity = Utillity();
+DrawerWidget drawerWidget = DrawerWidget();
+bool hasRecord = false;
 
 void main() {
   apiPost.post().then((value) {
@@ -48,224 +54,229 @@ class HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-          preferredSize: Size.fromHeight(60), child: buildAppBar()),
-      drawer: DrawerWidget(),
-      body: ListView(
-        scrollDirection: Axis.vertical,
-        shrinkWrap: true,
-        physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics()),
-        children: <Widget>[
-          buildSearchBar(context),
+        appBar: PreferredSize(
+            preferredSize: Size.fromHeight(0),
+            child: AppBar(
+              // Here we create one to set status bar color
+              backgroundColor: Colors
+                  .blue, // Set any color of status bar you want; or it defaults to your theme's primary color
+            )),
+        body: Column(
+          children: [
+            homeBar(),
+            Expanded(
+              child: Container(
+                color: Colors.white,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics()),
+                  child: Column(
+                    children: <Widget>[
+                      createItemBar(),
+                      createdDataAndMoneyBar(),
+                      createdContentList(),
+                    ],
+                  ),
+                ),
+              ),
+              flex: 1,
+            ),
+            createRefreshButton()
+          ],
+        ));
+  }
+
+  Widget homeBar() {
+    return Container(
+      padding: EdgeInsets.only(top: 20, bottom: 10),
+      color: Colors.blue,
+      child: Row(
+        children: [
           Container(
-            color: Colors.blue,
-            height: 44,
+            margin: EdgeInsets.only(left: 10),
+            child: Icon(
+              Icons.search,
+              color: Colors.white,
+            ),
           ),
-          createdevierBar(),
+          Expanded(
+              flex: 1,
+              child: Container(
+                margin: EdgeInsets.only(left: 30),
+                child: Text(
+                  "默認帳本",
+                  style: TextStyle(color: Colors.white),
+                ),
+              )),
           Container(
-            color: Colors.amber,
-            width: MediaQuery.of(context).size.width,
-            height: 150,
+            margin: EdgeInsets.only(left: 30),
+            child: Text(
+              "帳單",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
           Container(
-            color: Color.fromARGB(255, 214, 219, 219),
-            height: 5.0,
+            margin: EdgeInsets.only(left: 30, right: 10),
+            child: Icon(Icons.calendar_today_outlined, color: Colors.white),
           ),
-          createdProductView(),
-          createRefreshButton(),
-          createIntentButton()
         ],
       ),
     );
   }
 
-  Widget createdevierBar() {
+  Widget createItemBar() {
     return Container(
-      color: Colors.lightBlue,
+      color: Colors.blue,
+      padding: EdgeInsets.only(top: 10, bottom: 10),
       width: MediaQuery.of(context).size.width,
-      height: 44,
       child: Row(
         children: <Widget>[
-          Icon(
-            Icons.place,
-            color: Colors.white,
-          ),
-          SizedBox(
-            width: 10,
-          ),
-          Text("test1",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
+          Container(
+              margin: EdgeInsets.only(left: 10),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.format_list_numbered_rounded,
+                    color: Colors.white,
+                  ),
+                  Text(
+                    '預設帳本',
+                    style: TextStyle(color: Colors.white),
+                  )
+                ],
+              )),
+          Container(
+              margin: EdgeInsets.only(left: 10),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.add,
+                    color: Colors.white,
+                  ),
+                  Text(
+                    '新增帳本',
+                    style: TextStyle(color: Colors.white),
+                  )
+                ],
               )),
         ],
       ),
     );
   }
 
-  Widget createdProductView() {
+  Widget createdDataAndMoneyBar() {
     return Container(
-        alignment: Alignment.centerLeft,
-        padding: EdgeInsets.all(10),
-        child: Column(children: <Widget>[
-          Align(
-              alignment: Alignment.topLeft,
-              child: Text(
-                "一天的交易",
-                style: TextStyle(fontSize: 20, color: Colors.blueGrey),
-              )),
-          Divider(),
-          Icon(
-            Icons.access_alarm,
-            size: 200,
+      color: Colors.blue,
+      padding: EdgeInsets.all(10),
+      child: Row(
+        children: [
+          Text(
+            '2022-01',
+            style: TextStyle(color: Colors.white),
           ),
-          Align(
-              alignment: Alignment.topLeft,
-              child: Text(
-                "商品介紹.............xxxxdddeess",
-                style: TextStyle(fontSize: 12, color: Colors.blueGrey),
-              )),
-          ValueListenableBuilder(
-              valueListenable: _valueListenable,
-              builder: (context, List value, child) {
-                return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 20.0),
-                    height: 30.0,
-                    alignment: Alignment.center,
-                    child: ListView.separated(
-                      itemCount: value.length,
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (BuildContext context, int index) {
-                        return Card(
-                            color: Colors.amber,
-                            child: Container(
-                                padding: EdgeInsets.only(
-                                    left: 10, top: 0, right: 10, bottom: 0),
-                                child: Text(
-                                  value[index],
-                                  style: TextStyle(fontSize: 20),
-                                )));
-                      },
-                      separatorBuilder: (BuildContext context, int index) {
-                        return SizedBox(
-                          width: 10,
-                        );
-                      },
-                    ));
-              })
-        ]));
+          Expanded(flex: 1, child: SizedBox()),
+          Column(
+            children: [
+              Text(
+                '收入',
+                style: TextStyle(color: Colors.white),
+              ),
+              Text(
+                '99999',
+                style: TextStyle(color: Colors.white),
+              )
+            ],
+          ),
+          Container(
+            margin: EdgeInsets.only(left: 10),
+            child: Column(
+              children: [
+                Text(
+                  '支出',
+                  style: TextStyle(color: Colors.white),
+                ),
+                Text(
+                  '99999',
+                  style: TextStyle(color: Colors.white),
+                )
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget createdContentList() {
+    List<Widget> datesData = <Widget>[];
+    for (int i = 0; i < 100; i++) {
+      datesData.add(Container(child: Text("aaa$i"),margin: EdgeInsets.all(10),));
+    }
+    return Stack(
+      children: [
+        Container(
+          height: 60,
+          color: Colors.blue,
+        ),
+        Visibility(
+            visible: !hasRecord,
+            child: Card(
+              elevation: 0,
+              margin: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                  side: BorderSide(color: Colors.white),
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20))),
+              child: Container(
+                padding: EdgeInsets.all(10),
+                width: double.infinity,
+                child: Column(
+                  children: datesData,
+                ),
+              ),
+            )),
+        Visibility(
+            visible: hasRecord,
+            child: Card(
+              elevation: 0,
+              margin: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                  side: BorderSide(color: Colors.white),
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20))),
+              child: Container(
+                height: 400,
+                child: Text('沒有更多紀錄'),
+                alignment: Alignment.center,
+              ),
+            )),
+      ],
+    );
   }
 
   Widget createRefreshButton() {
-    return TextButton(
-        child: Text(exchangeRateJPY),
-        onPressed: () async {
-          _valueListenable.value.add("5");
-          print("aaaa $_valueListenable.value");
-          setState(() {});
-        });
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      child: TextButton(
+          child: Text("切換狀態"),
+          onPressed: () async {
+            hasRecord = !hasRecord;
+            setState(() {});
+          }),
+    );
   }
 
   Widget createIntentButton() {
     return TextButton(
         child: Text('切換頁面'),
         onPressed: () async {
-         Navigator.push(context, MaterialPageRoute(builder: (context) => TwoPage()));
+          TwoPage twoPage = TwoPage();
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => twoPage));
         });
-  }
-
-  Widget buildSearchBar(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(left: 10, top: 10, right: 10, bottom: 10),
-      width: MediaQuery.of(context).size.width,
-      color: Colors.blue,
-      height: 60,
-      child: Container(
-        height: 60,
-        alignment: Alignment.center,
-        color: Colors.white,
-        child: TextField(
-          decoration: InputDecoration(
-              border: InputBorder.none,
-              icon: Icon(
-                Icons.search,
-                size: 30,
-              ),
-              hintText: "search",
-              suffixIcon: Icon(
-                Icons.camera_alt,
-                size: 30,
-              )),
-        ),
-      ),
-    );
-  }
-
-  Widget buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.blue,
-      title: Align(
-        child: Text(
-          "test1",
-          style: TextStyle(color: Colors.blue, fontSize: 30),
-        ),
-      ),
-      actions: <Widget>[
-        Icon(Icons.notifications_none),
-        Icon(Icons.card_travel)
-      ],
-    );
-  }
-}
-
-class DrawerWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: <Widget>[
-          UserAccountsDrawerHeader(
-            accountName: Text(
-              'RedKeyset',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            accountEmail: Text('redkeyset@gmail.com'),
-            //定义用户头像，CircleAvatar 指定成圆形
-            currentAccountPicture: CircleAvatar(
-              backgroundImage: NetworkImage(
-                  'http://pic.616pic.com/ys_bnew_img/00/05/27/1oJwLdJItV.jpg'),
-            ),
-            decoration: BoxDecoration(
-                color: Colors.deepOrangeAccent, //区域背景颜色
-                image: DecorationImage(
-                    image: NetworkImage(
-                        'https://media.istockphoto.com/photos/deep-space-picture-id472809828?k=20&m=472809828&s=612x612&w=0&h=BGwhzzdXPHUeEm0iu20x241YLSb3tEsPRrH35uygMYg='),
-                    fit: BoxFit.cover,
-                    // ColorFilter 颜色滤镜  BlendMode混合模式
-                    colorFilter: ColorFilter.mode(
-                        Colors.blue[300]!
-                            .withOpacity(0.2), // blueAccent 这一类的颜色会报错
-                        BlendMode.srcOver))),
-          ),
-          ListTile(
-              leading: Icon(Icons.access_alarm,
-                  color: Colors.blueAccent, size: 18.0), //指定Icon的颜色  和 大小
-              title:
-                  Text('新闻', textAlign: TextAlign.left), //TextAlign.left 文字左对齐
-              onTap: () => Navigator.pop(context)),
-          ListTile(
-              title: Text('消息', textAlign: TextAlign.center),
-              onTap: () => Navigator.pop(context)),
-          ListTile(
-              title: Text('关于我们',
-                  textAlign: TextAlign.right), //TextAlign.right 文字右对齐
-              trailing: Icon(Icons.account_balance,
-                  color: Colors.orangeAccent, size: 28.0),
-              onTap: () => Navigator.pop(context))
-        ],
-      ),
-    );
   }
 }
