@@ -1,11 +1,15 @@
-import 'dart:io';
+import 'dart:ffi';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:untitledtest1/DrawerWidget.dart';
 import 'package:untitledtest1/TwoPage.dart';
 import 'package:untitledtest1/models/ApiPost.dart';
+import 'package:untitledtest1/models/SharedPreferencesUtillity.dart';
 import 'dart:convert';
 import 'models/Utillity.dart';
 
@@ -14,29 +18,26 @@ String exchangeRateJPY = "";
 GlobalKey<ScaffoldState> globalKey = GlobalKey();
 Utillity utillity = Utillity();
 DrawerWidget drawerWidget = DrawerWidget();
+SharedPreferencesUtillity sharedPreferencesUtillity =
+    SharedPreferencesUtillity();
 
-String icome = "\$999";
-String expenditure = "\$9,999";
+DateTime now = DateTime.now();
+String dateTime = "${now.year}-${now.month}-${now.day}";
 
-bool hasRecord = false;
 
 void main() {
-  getApi().then((value) {
-    exchangeRateJPY = jsonDecode(value.toString())['exchange_rate_JPY'];
-
-    runApp(MaterialApp(
-      builder: (context, child) => Scaffold(
-        // Global GestureDetector that will dismiss the keyboard
-        body: GestureDetector(
-          onTap: () {
-            utillity.hideKeyboard(context);
-          },
-          child: child,
-        ),
+  runApp(MaterialApp(
+    builder: (context, child) => Scaffold(
+      // Global GestureDetector that will dismiss the keyboard
+      body: GestureDetector(
+        onTap: () {
+          utillity.hideKeyboard(context);
+        },
+        child: child,
       ),
-      home: HomePage(),
-    ));
-  });
+    ),
+    home: HomePage(),
+  ));
 }
 
 Future<Response> getApi() async {
@@ -54,11 +55,6 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage> {
   // This widget is the root of your application.
-
-  List<String> litems = ["1", "2", "Third", "4"];
-
-  ValueNotifier<List> _valueListenable =
-      ValueNotifier<List>(["1", "2", "Third", "4"]);
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +87,9 @@ class HomePageState extends State<HomePage> {
             ),
             flex: 1,
           ),
-          createRefreshButton(),
+          createAddButton(),
+          createReduceButton(),
+          createRemoveButton(),
           createBottomBar()
         ],
       ),
@@ -177,97 +175,154 @@ class HomePageState extends State<HomePage> {
   }
 
   Widget createdDataAndMoneyBar() {
-    return Container(
-      color: Colors.blue,
-      padding: EdgeInsets.all(10),
-      child: Row(
-        children: [
-          Text(
-            '2022-01',
-            style: TextStyle(color: Colors.white),
-          ),
-          Expanded(flex: 1, child: SizedBox()),
-          Column(
+    DateTime tempDate = DateFormat("yyyy-MM-dd").parse(dateTime);
+    int allIcome = 0;
+    int allxpenditure = 0;
+
+    return FutureBuilder(
+      future: sharedPreferencesUtillity.getRecord(dateTime).then((value) {
+        if (value == null) {
+          allIcome = 0;
+          allxpenditure = 0;
+        } else {
+
+          for (int i = value.length - 1; i >= 0; i--) {
+            String money =
+            value[i].split("\$ ")[value[i].split("\$ ").length - 1];
+
+            if (value[i].contains("收入")) {
+              allIcome = allIcome + int.parse(money);
+            } else if (value[i].contains("消費")) {
+              allxpenditure = allxpenditure + int.parse(money);
+            }
+            print(money);
+          }
+        }
+      }),
+      builder: (_, value) {
+        return Container(
+          color: Colors.blue,
+          padding: EdgeInsets.all(10),
+          child: Row(
             children: [
-              Text(
-                '收入',
-                style: TextStyle(color: Colors.white),
+              GestureDetector(
+                child: Text(
+                  dateTime,
+                  style: TextStyle(color: Colors.white),
+                ),
+                onTap: () {
+                  showDatePicker(
+                      context: context,
+                      initialDate: tempDate,
+                      firstDate: DateTime(1990),
+                      lastDate: DateTime(9999))
+                      .then((value) {
+                    if (value != null) {
+                      dateTime = "${value.year}-${value.month}-${value.day}";
+                      setState(() {});
+                    }
+                  });
+                },
               ),
-              Text(
-                icome,
-                style: TextStyle(color: Colors.white),
+              Expanded(flex: 1, child: SizedBox()),
+              Column(
+                children: [
+                  Text(
+                    '收入',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    "\$" + allIcome.toString(),
+                    style: TextStyle(color: Colors.white),
+                  )
+                ],
+              ),
+              Container(
+                margin: EdgeInsets.only(left: 10),
+                child: Column(
+                  children: [
+                    Text(
+                      '支出',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    Text(
+                      "\$" + allxpenditure.toString(),
+                      style: TextStyle(color: Colors.white),
+                    )
+                  ],
+                ),
               )
             ],
           ),
-          Container(
-            margin: EdgeInsets.only(left: 10),
-            child: Column(
-              children: [
-                Text(
-                  '支出',
-                  style: TextStyle(color: Colors.white),
-                ),
-                Text(
-                  expenditure,
-                  style: TextStyle(color: Colors.white),
-                )
-              ],
-            ),
-          )
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget createdContentList() {
     List<Widget> datesData = <Widget>[];
-    for (int i = 0; i < 100; i++) {
-      datesData.add(Container(
-        child: Text("aaa$i"),
-        margin: EdgeInsets.all(10),
-      ));
-    }
-    return Stack(
-      children: [
-        Container(
-          height: 60,
-          color: Colors.blue,
-        ),
-        Visibility(
-            visible: !hasRecord,
-            child: Card(
-              elevation: 0,
-              margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                  side: BorderSide(color: Colors.white),
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20))),
-              child: Container(
-                padding: EdgeInsets.all(10),
-                width: double.infinity,
-                child: Column(
-                  children: datesData,
-                ),
-              ),
-            )),
-        Visibility(
-            visible: hasRecord,
-            child: Card(
-              elevation: 0,
-              margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                  side: BorderSide(color: Colors.white),
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20))),
-              child: Container(
-                height: 400,
-                child: Text('沒有更多紀錄'),
-                alignment: Alignment.center,
-              ),
-            )),
-      ],
+    bool hasRecord = true;
+
+    return FutureBuilder(
+      future: sharedPreferencesUtillity.getRecord(dateTime).then((value) {
+        if (value == null) {
+          hasRecord = false;
+        } else {
+          hasRecord = true;
+          for (int i = value.length - 1; i >= 0; i--) {
+
+            datesData.add(Container(
+              child: Text(value[i]),
+              margin: EdgeInsets.all(10),
+            ));
+          }
+        }
+      }),
+      builder: (_, value) {
+        return Stack(
+          children: [
+            Container(
+              height: 20,
+              color: Colors.blue,
+            ),
+            Visibility(
+                visible: hasRecord,
+                child: Card(
+                  elevation: 0,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                      side: BorderSide(color: Colors.white),
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20))),
+                  child: Container(
+                    constraints: BoxConstraints(minHeight: 300),
+                    padding: EdgeInsets.all(10),
+                    width: double.infinity,
+                    child: Column(
+                      children: datesData,
+                    ),
+                  ),
+                )),
+            Visibility(
+                visible: !hasRecord,
+                child: Card(
+                  elevation: 0,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                      side: BorderSide(color: Colors.white),
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20))),
+                  child: Container(
+                    height: 400,
+                    child: Text('沒有更多紀錄'),
+                    alignment: Alignment.center,
+                  ),
+                )),
+          ],
+        );
+      },
     );
   }
 
@@ -301,7 +356,9 @@ class HomePageState extends State<HomePage> {
                           )
                         ],
                       ),
-                      onTap: (){ print('go 1');},
+                      onTap: () {
+                        print('go 1');
+                      },
                     ),
                   ),
                   flex: 1,
@@ -327,7 +384,9 @@ class HomePageState extends State<HomePage> {
                           )
                         ],
                       ),
-                      onTap: (){ print('go 2');},
+                      onTap: () {
+                        print('go 2');
+                      },
                     ),
                   ),
                   flex: 1,
@@ -353,7 +412,9 @@ class HomePageState extends State<HomePage> {
                           )
                         ],
                       ),
-                      onTap: (){ print('go 3');},
+                      onTap: () {
+                        print('go 3');
+                      },
                     ),
                   ),
                   flex: 1,
@@ -379,7 +440,9 @@ class HomePageState extends State<HomePage> {
                           )
                         ],
                       ),
-                      onTap: (){ print('go 4');},
+                      onTap: () {
+                        print('go 4');
+                      },
                     ),
                   ),
                   flex: 1,
@@ -390,14 +453,46 @@ class HomePageState extends State<HomePage> {
         ));
   }
 
-  Widget createRefreshButton() {
+  Widget createAddButton() {
     return Container(
       width: double.infinity,
       color: Colors.white,
       child: TextButton(
-          child: Text("切換狀態"),
+          child: Text("增加收入"),
           onPressed: () async {
-            hasRecord = !hasRecord;
+            // sharedPreferencesUtillity.removeRecord();
+            sharedPreferencesUtillity.setRecord(
+                dateTime, "$dateTime 收入xxxxx \$ 999");
+            // hasRecord = !hasRecord;
+            setState(() {});
+          }),
+    );
+  }
+
+  Widget createReduceButton() {
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      child: TextButton(
+          child: Text("增加支出"),
+          onPressed: () async {
+            // sharedPreferencesUtillity.removeRecord();
+            sharedPreferencesUtillity.setRecord(
+                dateTime, "$dateTime 消費xxxxx \$ 999");
+            // hasRecord = !hasRecord;
+            setState(() {});
+          }),
+    );
+  }
+
+  Widget createRemoveButton() {
+    return Container(
+      width: double.infinity,
+      color: Colors.white,
+      child: TextButton(
+          child: Text("刪除紀錄"),
+          onPressed: () async {
+            sharedPreferencesUtillity.removeRecord(dateTime);
             setState(() {});
           }),
     );
