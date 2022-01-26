@@ -1,21 +1,22 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'main.dart';
+import '../../main.dart';
 
 
-class TwoPage extends StatefulWidget {
-  TwoPage({Key? key}) : super(key: key);
+class WalletPage extends StatefulWidget {
+  WalletPage({Key? key}) : super(key: key);
 
   @override
-  TwoPageState createState() {
-    return TwoPageState();
+  WalletPageState createState() {
+    return WalletPageState();
   }
 }
 
-class TwoPageState extends State<TwoPage> {
+class WalletPageState extends State<WalletPage> {
   // This widget is the root of your application.
 
   List<String> litems = ["1", "2", "Third", "4"];
@@ -26,6 +27,13 @@ class TwoPageState extends State<TwoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: PreferredSize(
+          preferredSize: Size.fromHeight(0),
+          child: AppBar(
+            // Here we create one to set status bar color
+            elevation: 0,
+            systemOverlayStyle: SystemUiOverlayStyle(statusBarColor: Colors.blue),
+          )),
       body: ListView(
         scrollDirection: Axis.vertical,
         shrinkWrap: true,
@@ -51,9 +59,12 @@ class TwoPageState extends State<TwoPage> {
         child: TextField(
           decoration: InputDecoration(
               border: InputBorder.none,
-              icon: Icon(
-                Icons.search,
-                size: 30,
+              icon: Container(
+                margin: EdgeInsets.only(left: 5),
+                child: Icon(
+                  Icons.search,
+                  size: 30,
+                ),
               ),
               hintText: "search",
               suffixIcon: Icon(

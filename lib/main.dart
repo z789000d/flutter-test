@@ -7,7 +7,10 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:untitledtest1/DrawerWidget.dart';
-import 'package:untitledtest1/TwoPage.dart';
+import 'package:untitledtest1/mock/page/AnalyzePage.dart';
+import 'package:untitledtest1/mock/page/SearchPage.dart';
+import 'package:untitledtest1/mock/page/SettingPage.dart';
+import 'package:untitledtest1/mock/page/WalletPage.dart';
 import 'package:untitledtest1/models/ApiPost.dart';
 import 'package:untitledtest1/models/SharedPreferencesUtillity.dart';
 import 'dart:convert';
@@ -23,7 +26,6 @@ SharedPreferencesUtillity sharedPreferencesUtillity =
 
 DateTime now = DateTime.now();
 String dateTime = "${now.year}-${now.month}-${now.day}";
-
 
 void main() {
   runApp(MaterialApp(
@@ -63,8 +65,8 @@ class HomePageState extends State<HomePage> {
           preferredSize: Size.fromHeight(0),
           child: AppBar(
             // Here we create one to set status bar color
-            backgroundColor: Colors
-                .blue, // Set any color of status bar you want; or it defaults to your theme's primary color
+            elevation: 0,
+            systemOverlayStyle: SystemUiOverlayStyle(statusBarColor: Colors.blue),
           )),
       body: Column(
         children: [
@@ -102,12 +104,19 @@ class HomePageState extends State<HomePage> {
       color: Colors.blue,
       child: Row(
         children: [
-          Container(
-            margin: EdgeInsets.only(left: 10),
-            child: Icon(
-              Icons.search,
-              color: Colors.white,
+          GestureDetector(
+            child: Container(
+              margin: EdgeInsets.only(left: 10),
+              child: Icon(
+                Icons.search,
+                color: Colors.white,
+              ),
             ),
+            onTap: () {
+              SearchPage searchPage = SearchPage();
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => searchPage));
+            },
           ),
           Expanded(
               flex: 1,
@@ -185,10 +194,9 @@ class HomePageState extends State<HomePage> {
           allIcome = 0;
           allxpenditure = 0;
         } else {
-
           for (int i = value.length - 1; i >= 0; i--) {
             String money =
-            value[i].split("\$ ")[value[i].split("\$ ").length - 1];
+                value[i].split("\$ ")[value[i].split("\$ ").length - 1];
 
             if (value[i].contains("收入")) {
               allIcome = allIcome + int.parse(money);
@@ -212,10 +220,10 @@ class HomePageState extends State<HomePage> {
                 ),
                 onTap: () {
                   showDatePicker(
-                      context: context,
-                      initialDate: tempDate,
-                      firstDate: DateTime(1990),
-                      lastDate: DateTime(9999))
+                          context: context,
+                          initialDate: tempDate,
+                          firstDate: DateTime(1990),
+                          lastDate: DateTime(9999))
                       .then((value) {
                     if (value != null) {
                       dateTime = "${value.year}-${value.month}-${value.day}";
@@ -270,7 +278,6 @@ class HomePageState extends State<HomePage> {
         } else {
           hasRecord = true;
           for (int i = value.length - 1; i >= 0; i--) {
-
             datesData.add(Container(
               child: Text(value[i]),
               margin: EdgeInsets.all(10),
@@ -385,6 +392,11 @@ class HomePageState extends State<HomePage> {
                         ],
                       ),
                       onTap: () {
+                        WalletPage walletPage = WalletPage();
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => walletPage));
                         print('go 2');
                       },
                     ),
@@ -413,6 +425,11 @@ class HomePageState extends State<HomePage> {
                         ],
                       ),
                       onTap: () {
+                        AnalyzePage analyzePage = AnalyzePage();
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => analyzePage));
                         print('go 3');
                       },
                     ),
@@ -441,6 +458,11 @@ class HomePageState extends State<HomePage> {
                         ],
                       ),
                       onTap: () {
+                        SettingPage settingPage = SettingPage();
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => settingPage));
                         print('go 4');
                       },
                     ),
@@ -496,15 +518,5 @@ class HomePageState extends State<HomePage> {
             setState(() {});
           }),
     );
-  }
-
-  Widget createIntentButton() {
-    return TextButton(
-        child: Text('切換頁面'),
-        onPressed: () async {
-          TwoPage twoPage = TwoPage();
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => twoPage));
-        });
   }
 }
