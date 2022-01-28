@@ -7,11 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:untitledtest1/DrawerWidget.dart';
-import 'package:untitledtest1/mock/page/AnalyzePage.dart';
-import 'package:untitledtest1/mock/page/SearchPage.dart';
-import 'package:untitledtest1/mock/page/SettingPage.dart';
-import 'package:untitledtest1/mock/page/WalletPage.dart';
+import 'package:untitledtest1/page/AnalyzePage.dart';
+import 'package:untitledtest1/page/SearchPage.dart';
+import 'package:untitledtest1/page/SettingPage.dart';
+import 'package:untitledtest1/page/WalletPage.dart';
 import 'package:untitledtest1/models/ApiPost.dart';
+import 'package:untitledtest1/models/BottomSheetUtillity.dart';
 import 'package:untitledtest1/models/SharedPreferencesUtillity.dart';
 import 'dart:convert';
 import 'models/Utillity.dart';
@@ -24,7 +25,7 @@ DrawerWidget drawerWidget = DrawerWidget();
 SharedPreferencesUtillity sharedPreferencesUtillity =
     SharedPreferencesUtillity();
 
-DateTime now = DateTime.now();
+DateTime now = DateTime.now().toLocal();
 String dateTime = "${now.year}-${now.month}-${now.day}";
 
 void main() {
@@ -66,7 +67,8 @@ class HomePageState extends State<HomePage> {
           child: AppBar(
             // Here we create one to set status bar color
             elevation: 0,
-            systemOverlayStyle: SystemUiOverlayStyle(statusBarColor: Colors.blue),
+            systemOverlayStyle:
+                SystemUiOverlayStyle(statusBarColor: Colors.blue),
           )),
       body: Column(
         children: [
@@ -89,9 +91,24 @@ class HomePageState extends State<HomePage> {
             ),
             flex: 1,
           ),
-          createAddButton(),
-          createReduceButton(),
-          createRemoveButton(),
+          Container(
+            child: Row(
+              children: [
+                Expanded(
+                  child: createAddButton(),
+                  flex: 1,
+                ),
+                Expanded(
+                  child: createReduceButton(),
+                  flex: 1,
+                ),
+                Expanded(
+                  child: createRemoveButton(),
+                  flex: 1,
+                ),
+              ],
+            ),
+          ),
           createBottomBar()
         ],
       ),
@@ -114,7 +131,7 @@ class HomePageState extends State<HomePage> {
             ),
             onTap: () {
               SearchPage searchPage = SearchPage();
-              Navigator.push(
+              Navigator.pushReplacement(
                   context, MaterialPageRoute(builder: (context) => searchPage));
             },
           ),
@@ -143,44 +160,89 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  Widget createItemBar() {
-    return Container(
-      color: Colors.blue,
-      padding: EdgeInsets.only(top: 10, bottom: 10),
-      width: MediaQuery.of(context).size.width,
-      child: Row(
-        children: <Widget>[
-          Container(
-              margin: EdgeInsets.only(left: 10),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.format_list_numbered_rounded,
-                    color: Colors.white,
+  createItemBar() {
+    List<Container> list = <Container>[];
+
+    return FutureBuilder<List<String>?>(
+        future: SharedPreferencesUtillity().getLedgerRecord(),
+        builder: (BuildContext context, value) {
+          list.clear();
+          if (value.data != null) {
+            for (int i = 0; i < value.data!.length; i++) {
+              list.add(Container(
+                  margin: EdgeInsets.only(left: 10),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.format_list_numbered_rounded,
+                        color: Colors.white,
+                      ),
+                      Text(
+                        '${value.data![i]}',
+                        style: TextStyle(color: Colors.white),
+                      )
+                    ],
+                  )));
+            }
+          } else {
+            list.add(Container());
+          }
+
+          return Container(
+            color: Colors.blue,
+            padding: EdgeInsets.only(top: 10, bottom: 10),
+            width: MediaQuery.of(context).size.width,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics()),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                      margin: EdgeInsets.only(left: 10),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.format_list_numbered_rounded,
+                            color: Colors.white,
+                          ),
+                          Text(
+                            '預設帳本',
+                            style: TextStyle(color: Colors.white),
+                          )
+                        ],
+                      )),
+                  Container(
+                    child: Row(
+                      children: list,
+                    ),
                   ),
-                  Text(
-                    '預設帳本',
-                    style: TextStyle(color: Colors.white),
-                  )
-                ],
-              )),
-          Container(
-              margin: EdgeInsets.only(left: 10),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.add,
-                    color: Colors.white,
+                  Container(
+                    margin: EdgeInsets.only(left: 10),
+                    child: GestureDetector(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.add,
+                            color: Colors.white,
+                          ),
+                          Text(
+                            '新增帳本',
+                            style: TextStyle(color: Colors.white),
+                          )
+                        ],
+                      ),
+                      onTap: () {
+                        BottomSheetUtillity()
+                            .showBottomSheet(context, () => setState(() {}));
+                      },
+                    ),
                   ),
-                  Text(
-                    '新增帳本',
-                    style: TextStyle(color: Colors.white),
-                  )
                 ],
-              )),
-        ],
-      ),
-    );
+              ),
+            ),
+          );
+        });
   }
 
   Widget createdDataAndMoneyBar() {
@@ -335,12 +397,11 @@ class HomePageState extends State<HomePage> {
 
   Widget createBottomBar() {
     return Container(
+        height: 65,
         color: Colors.white,
-        padding: EdgeInsets.only(bottom: 10),
         child: Column(
           children: [
             Container(
-              margin: EdgeInsets.only(bottom: 10),
               color: Colors.black,
               width: double.infinity,
               height: 1,
@@ -349,7 +410,6 @@ class HomePageState extends State<HomePage> {
               children: [
                 Expanded(
                   child: Container(
-                    margin: EdgeInsets.only(left: 10),
                     child: GestureDetector(
                       child: Column(
                         children: [
@@ -373,11 +433,10 @@ class HomePageState extends State<HomePage> {
                 Container(
                   color: Colors.black,
                   width: 1,
-                  height: 30,
+                  height: 64,
                 ),
                 Expanded(
                   child: Container(
-                    margin: EdgeInsets.only(left: 10),
                     child: GestureDetector(
                       child: Column(
                         children: [
@@ -406,11 +465,10 @@ class HomePageState extends State<HomePage> {
                 Container(
                   color: Colors.black,
                   width: 1,
-                  height: 30,
+                  height: 64,
                 ),
                 Expanded(
                   child: Container(
-                    margin: EdgeInsets.only(left: 10),
                     child: GestureDetector(
                       child: Column(
                         children: [
@@ -439,11 +497,10 @@ class HomePageState extends State<HomePage> {
                 Container(
                   color: Colors.black,
                   width: 1,
-                  height: 30,
+                  height: 64,
                 ),
                 Expanded(
                   child: Container(
-                    margin: EdgeInsets.only(left: 10),
                     child: GestureDetector(
                       child: Column(
                         children: [
@@ -477,7 +534,6 @@ class HomePageState extends State<HomePage> {
 
   Widget createAddButton() {
     return Container(
-      width: double.infinity,
       color: Colors.white,
       child: TextButton(
           child: Text("增加收入"),
@@ -493,7 +549,6 @@ class HomePageState extends State<HomePage> {
 
   Widget createReduceButton() {
     return Container(
-      width: double.infinity,
       color: Colors.white,
       child: TextButton(
           child: Text("增加支出"),
@@ -509,7 +564,6 @@ class HomePageState extends State<HomePage> {
 
   Widget createRemoveButton() {
     return Container(
-      width: double.infinity,
       color: Colors.white,
       child: TextButton(
           child: Text("刪除紀錄"),

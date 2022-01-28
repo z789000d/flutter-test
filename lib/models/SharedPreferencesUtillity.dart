@@ -2,9 +2,6 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferencesUtillity {
-  SharedPreferencesUtillity() {
-    SharedPreferences.setMockInitialValues({});
-  }
 
   setRecord(String dateTime, String recordString) async {
     final prefs = await SharedPreferences.getInstance();
@@ -29,5 +26,30 @@ class SharedPreferencesUtillity {
   removeRecord(String dateTime) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.remove("record" + dateTime);
+  }
+
+  setLedgerRecord(String recordString) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (prefs.getStringList("ledgerrecord") != null) {
+      List<String>? list = prefs.getStringList("ledgerrecord");
+      list?.add(recordString);
+
+      await prefs.setStringList("ledgerrecord", list!);
+    } else {
+      List<String> list = [recordString];
+      await prefs.setStringList("ledgerrecord", list);
+    }
+  }
+
+  Future<List<String>?> getLedgerRecord() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    return prefs.getStringList("ledgerrecord");
+  }
+
+  removeLedgerRecord() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    await preferences.remove("ledgerrecord");
   }
 }
